@@ -1,6 +1,10 @@
 module.exports = loader
 module.exports.testedVersions = ['1.8.8', '1.9.4', '1.10.2', '1.11.2', '1.12.2', '1.13.2', '1.14.4', '1.15.2', '1.16.4', '1.17.1', '1.18.1', 'bedrock_1.17.10', 'bedrock_1.18.0', '1.20']
 
+// Configuration for unknown block handling
+let unknownBlockHandling = 'throw' // 'throw' or 'fallback'
+let unknownBlockFallback = 'stone'
+
 const nbt = require('prismarine-nbt')
 const mcData = require('minecraft-data')
 const legacyPcBlocksByName = Object.entries(mcData.legacy.pc.blocks).reduce((obj, [idmeta, name]) => {
@@ -218,7 +222,22 @@ function provider (registry, { Biome, version }) {
     static fromProperties (typeId, properties, biomeId) {
       const block = typeof typeId === 'string' ? registry.blocksByName[typeId] : registry.blocks[typeId]
 
-      if (!block) throw new Error('No matching block id found for ' + typeId + ' with properties ' + JSON.stringify(properties)) // This should not happen
+      if (!block) {
+        if (unknownBlockHandling === 'fallback') {
+          // Return fallback block with metadata about the original unknown block
+          const fallbackBlock = registry.blocksByName[unknownBlockFallback]
+          if (!fallbackBlock) {
+            throw new Error(`Unknown block '${typeId}' and fallback block '${unknownBlockFallback}' not found`)
+          }
+          const result = new Block(undefined, biomeId, 0, fallbackBlock.defaultState)
+          result.unknown = true
+          result.originalName = typeId
+          result.originalProperties = properties
+          result.displayName = `Unknown (${typeId})`
+          return result
+        }
+        throw new Error('No matching block id found for ' + typeId + ' with properties ' + JSON.stringify(properties)) // This should not happen
+      }
 
       if (version.type === 'pc') {
         if (block.states) {
@@ -270,6 +289,25 @@ function provider (registry, { Biome, version }) {
           return [key.slice(1, -1), value.startsWith('"') ? value.slice(1, -1) : { true: 1, false: 0 }[value] ?? parseInt(value)]
         })), biomeId)
       }
+    }
+
+    /**
+     * Set the handling mode for unknown blocks.
+     * @param {string} mode - 'throw' (default) to throw an error, or 'fallback' to return a fallback block
+     */
+    static setUnknownBlockHandling (mode) {
+      if (mode !== 'throw' && mode !== 'fallback') {
+        throw new Error("Unknown block handling mode must be either 'throw' or 'fallback'")
+      }
+      unknownBlockHandling = mode
+    }
+
+    /**
+     * Set the fallback block name to use when unknownBlockHandling is 'fallback'.
+     * @param {string} name - The block name to use as fallback (default: 'stone')
+     */
+    static setUnknownBlockFallback (name) {
+      unknownBlockFallback = name
     }
 
     get blockEntity () {

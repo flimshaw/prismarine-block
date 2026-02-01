@@ -22,11 +22,39 @@ console.log(stoneBlock.digTime(257))
 
 ```
 
+### Handling Unknown Blocks
+
+When loading blocks from external sources (e.g., world files), you may encounter block types that are not recognized by the current version of minecraft-data. By default, `Block.fromProperties()` will throw an error when this happens. You can configure alternative behavior:
+
+```js
+const registry = require('prismarine-registry')('1.16.4')
+const Block = require('prismarine-block')(registry)
+
+// Option 1: Throw an error (default behavior)
+// Block.setUnknownBlockHandling('throw')
+
+// Option 2: Return a fallback block with metadata
+Block.setUnknownBlockHandling('fallback')
+Block.setUnknownBlockFallback('stone') // Optional: customize fallback block
+
+const block = Block.fromProperties('unknown_mod_block', { prop: 'value' }, 0)
+
+if (block.unknown) {
+  console.log(`Unknown block: ${block.originalName}`)
+  console.log(`Original properties:`, block.originalProperties)
+  console.log(`Fallback to: ${block.name}`)
+}
+```
+
 ## API
 
 See [doc/API.md](doc/API.md)
 
 ## History
+
+### 1.23.0
+* Add configurable unknown block handling with `Block.setUnknownBlockHandling()` and `Block.setUnknownBlockFallback()`
+
 
 ### 1.22.0
 * [Update sign blockEntity for 1.21.5 (#115)](https://github.com/PrismarineJS/prismarine-block/commit/a660e4a45c3afdd932d9b9311a93567c49e9c80e) (thanks @extremeheat)

@@ -97,6 +97,21 @@ export declare class Block {
     isWaterlogged?: boolean
 
     /**
+     * Set to true if this block is an unknown block that was replaced with a fallback block.
+     */
+    unknown?: boolean;
+
+    /**
+     * The original name of the unknown block when fallback mode is used.
+     */
+    originalName?: string;
+
+    /**
+     * The original properties of the unknown block when fallback mode is used.
+     */
+    originalProperties?: States;
+
+    /**
      * This tells what types of tools will be effective against the block.
      * Possible values are: null, rock, wood, plant, melon, leaves, dirt, web, and wool.
      *
@@ -181,6 +196,18 @@ export declare class Block {
      * @param biomeId - the biome numerical id
      */
     static fromString(stateString: string, biomeId: number): Block;
+
+    /**
+     * Set the handling mode for unknown blocks.
+     * @param mode - 'throw' (default) to throw an error, or 'fallback' to return a fallback block
+     */
+    static setUnknownBlockHandling(mode: 'throw' | 'fallback'): void;
+
+    /**
+     * Set the fallback block name to use when unknownBlockHandling is 'fallback'.
+     * @param name - The block name to use as fallback (default: 'stone')
+     */
+    static setUnknownBlockFallback(name: string): void;
 
     // Position of the block (mineflayer)
     position: Vec3;
