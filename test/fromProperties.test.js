@@ -84,13 +84,29 @@ describe('versions should return block state and properties', () => {
 })
 
 describe('Unknown Block Handling', () => {
-  it('should throw error for unknown block by default (throw mode)', () => {
+  it('should return fallback block by default (fallback mode)', () => {
     const registry = require('prismarine-registry')('1.16.4')
     const Block = require('prismarine-block')(registry)
+
+    const block = Block.fromProperties('nonexistent_block_xyz', { some: 'property' }, 0)
+
+    expect(block.unknown).toBe(true)
+    expect(block.originalName).toBe('nonexistent_block_xyz')
+    expect(block.name).toBe('stone') // default fallback
+  })
+
+  it('should throw error when explicitly set to throw mode', () => {
+    const registry = require('prismarine-registry')('1.16.4')
+    const Block = require('prismarine-block')(registry)
+
+    Block.setUnknownBlockHandling('throw')
 
     expect(() => {
       Block.fromProperties('nonexistent_block_xyz', { some: 'property' }, 0)
     }).toThrow('No matching block id found')
+
+    // Reset to default for other tests
+    Block.setUnknownBlockHandling('fallback')
   })
 
   it('should return fallback block when mode is set to fallback', () => {
